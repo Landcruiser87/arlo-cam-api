@@ -1,5 +1,6 @@
 import select
 import socket
+import time
 import threading
 import sqlite3
 import yaml
@@ -34,6 +35,10 @@ with sqlite3.connect('arlo.db') as conn:
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_device_ip ON devices (ip)")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_device_friendlyname ON devices (friendlyname)")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_device_hostname ON devices (hostname)")
+
+    c.execute("CREATE TABLE IF NOT EXISTS schedule (id integer primary key, serialnumber text, action text, time integer)")
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_schedule_time ON schedule (time)")
+
     conn.commit()
 
 
@@ -149,9 +154,44 @@ class ServerThread(threading.Thread):
         for t in threads:
             t.join()
 
+class ScheduleThread(threading.Thread):
+    def run(self):
+        while True:
+            try:
+                # s_print("Running scheduler thread")
+                now = int(time.time())
+                with sqlite3.connect('arlo.db') as conn:
+                    c = conn.cursor()
+                    c.execute(f"SELECT * FROM schedule where time <= {now}")
+                    rows = c.fetchall()
+                    if rows is not None:
+                        for row in rows:
+                            (id, serial_number, action, when) = row     # use "when" instead of "time" b/c we "import time" above
+                            device = DeviceDB.from_db_serial(serial_number)
+                            if device is not None:
+                                if action in ['Armed', 'Disarmed']:
+                                    s_print(f"Scheduler: setting {serial_number} to {action}")
+                                    device.arm({'PIRTargetState': action})
+                                    device.pir_start_state = action
+                                    DeviceDB.persist(device)
+                                else:
+                                    s_print(f"Scheduler: unknown action: {action} for device {serial_number}")
+
+                            c.execute(f"DELETE FROM schedule where id == {id}")
+                            conn.commit()
+
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                print(e)
+
+            time.sleep(60)
 
 server_thread = ServerThread()
 server_thread.start()
+schedule_thread = ScheduleThread()
+schedule_thread.start()
 flask_thread = api.api.get_thread()
 server_thread.join()
+schedule_thread.join()
 flask_thread.join()

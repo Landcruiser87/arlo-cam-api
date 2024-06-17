@@ -224,6 +224,36 @@
 			"response": []
 		},
 		{
+			"name": "Device Temporarily Disarm",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"duration\":\"1.5h\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/device/{{serial_number}}/tempdisarm",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"device",
+						"{{serial_number}}",
+						"disarm"
+					]
+				},
+				"description": "Set device to disarmed state and then re-arm after duration.  Valid quantifiers are s, m, h, d for seconds, minutes, hours, days. Quanity can be an int or float"
+			},
+			"response": []
+		},
+
+		{
 			"name": "Device PIR LED",
 			"request": {
 				"method": "POST",

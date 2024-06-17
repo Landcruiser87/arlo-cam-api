@@ -110,6 +110,18 @@ def arm(serial, req_body, device: Device):
     DeviceDB.persist(device)
     return flask.jsonify({"result": result})
 
+@app.route('/device/<serial>/tempdisarm', methods=['POST'])
+@validate_device_request()
+def tempdisarm(serial, req_body, device: Device):
+    try:
+        result = device.tempdisarm(req_body)
+    except Exception as e:
+        return flask.jsonify({"result": str(e)}), 400
+
+    device.pir_start_state = 'Disarmed'
+    DeviceDB.persist(device)
+
+    return flask.jsonify({"result": result})
 
 @app.route('/device/<serial>/pirled', methods=['POST'])
 @validate_device_request()

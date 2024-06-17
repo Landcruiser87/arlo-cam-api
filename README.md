@@ -285,6 +285,9 @@ Sending audio whilst the camera is streaming appears to kill audio...
 
 A camera *on battery power* reports near ambient temperatures for it's temperature that seems to be accurate within a few degrees. This can be retrieved with a status request via the API.
 
+## Temporarily Disarm
+You can temporarily disarm a camera for a specified duration and the scheduler will re-arm it after the duration.  Useful if you're moving in and out of an monitored area.  See API docs for the syntax.
+
 ## Other Gotchas
 
 1. I coulnd't seem to get TCP connections to the RTSP stream to work; only UDP. EDIT: This DOES seem to work on newer cams, as long as you send RTCP Receiver Reports.

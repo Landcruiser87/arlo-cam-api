@@ -1,7 +1,9 @@
+import re
 import socket
 import sys
 import copy
 import time
+import sqlite3
 
 from abc import ABC, abstractproperty, abstractmethod
 from arlo.messages import Message
@@ -97,6 +99,40 @@ class Device(ABC):
 
     def arm(self, args):
         ...
+
+    def tempdisarm(self, args):
+        duration_str = args['duration']
+
+        # s=sec, m=min, h=hour, d=day
+        match = re.match("^(\d+\.?\d*)\s*([smhd])", duration_str)
+
+        if not match:
+            raise ValueError(f"Bad duration string: {duration_str}")
+
+        quantity = float(match.group(1))
+        quantifier = match.group(2)
+
+        if quantifier == 's':
+            duration = int(quantity)
+        elif quantifier == 'm':
+            duration = int(quantity * 60)
+        elif quantifier == 'h':
+            duration = int(quantity * 60 * 60)
+        elif quantifier == 'd':
+            duration = int(quantity * 60 * 60 * 24)
+        else:
+            raise ValueError(f"Bad quantifier: {quantifier}")
+
+        self.arm({'PIRTargetState': 'Disarmed'})
+
+        end = int(time.time()) + duration
+
+        with sqlite3.connect('arlo.db') as conn:
+            c = conn.cursor()
+            c.execute("INSERT INTO schedule VALUES (?,?,?,?)", (None, self.serial_number, 'Armed', end))
+            conn.commit()
+
+        return "OK"
 
     def mic_request(self, enabled):
         register_set = Message(copy.deepcopy(arlo.messages.REGISTER_SET))
