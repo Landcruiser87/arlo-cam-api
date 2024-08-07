@@ -104,7 +104,7 @@ class Device(ABC):
         duration_str = args['duration']
 
         # s=sec, m=min, h=hour, d=day
-        match = re.match("^(\d+\.?\d*)\s*([smhd])", duration_str)
+        match = re.match("^(\d+\.?\d*)\s*([smhd]*)", duration_str)
 
         if not match:
             raise ValueError(f"Bad duration string: {duration_str}")
@@ -114,7 +114,7 @@ class Device(ABC):
 
         if quantifier == 's':
             duration = int(quantity)
-        elif quantifier == 'm':
+        elif quantifier == 'm' or quantifier == '':
             duration = int(quantity * 60)
         elif quantifier == 'h':
             duration = int(quantity * 60 * 60)
