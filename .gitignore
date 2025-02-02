@@ -147,5 +147,7 @@ dmypy.json
 *.xlsx
 *.json
 *.pickle
+*.yml
+*.env
 .Rhistory
 .DS_Store
